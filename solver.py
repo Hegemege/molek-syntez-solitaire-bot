@@ -51,12 +51,11 @@ MAX_SOLUTION_LENGTH = 100
 
 REPLAY_WAIT_BETWEEN_ACTIONS = 0.06
 REPLAY_MOUSE_MOVE_TIME = 0.06
-REPLAY_COLLAPSE_WAIT_TIME = 0.50
 
 
 def main():
     intro_print()
-    # time.sleep(5)
+    time.sleep(5)
 
     solve()
 
@@ -77,7 +76,7 @@ def solve():
     image = ImageGrab.grab()
     image = crop(image)
 
-    image = PIL.Image.open("reference.bmp")
+    # image = PIL.Image.open("reference.bmp")
 
     # Initialize the beginning game state
     state = GameState()
@@ -96,10 +95,20 @@ def solve():
     original_state = state.clone()
     highest_heuristic = -999
 
+    # DEBUG
+    print_highest_heuristic = 0
+    print_interval = 1000
+    print_since = 0
+    print_state_interval = 10000
+    print_state_since = 0
+
     # Start the main solving loop
     states_searched = 0
 
     while True:
+        if states_searched > 50000:
+            print("50k searched, applying actions of highest found heuristic score")
+            break
         if len(search_stack) == 0 and len(state_history) > 0:
             print("Unable to find solution")
             break
@@ -108,6 +117,23 @@ def solve():
         current_search_item = search_stack.pop()
         current_state = current_search_item[0]
         current_history = current_search_item[1]
+
+        # DEBUG
+        if current_search_item[2] > print_highest_heuristic or print_since > print_interval:
+            print("Top heuristic", highest_heuristic, "Heuristic", current_search_item[2], "Stack size", len(
+                search_stack), "Searched", states_searched)
+
+        if print_state_since > print_state_interval:
+            print("Current state", current_state)
+
+        if current_search_item[2] > print_highest_heuristic:
+            print_highest_heuristic = current_search_item[2]
+        if print_since > print_interval:
+            print_since = 0
+        if print_state_since > print_state_interval:
+            print_state_since = 0
+        print_since += 1
+        print_state_since += 1
 
         # End searches that run too deep
         if len(current_history) > MAX_SOLUTION_LENGTH:
@@ -146,8 +172,11 @@ def solve():
             search_stack.append((clone, new_history, heuristic_score))
             states_searched += 1
 
-    print("Skipping replay...")
-    # replay_actions(shortest_solution)
+        # Sort the search stack such that the latest action has the highest heuristic score
+        search_stack.sort(key=lambda item: item[2])
+
+    # print("Skipping replay...")
+    replay_actions(shortest_solution)
 
 
 def replay_actions(actions):
@@ -169,16 +198,23 @@ def replay_actions(actions):
         # Stack to stack
         from_position = CLICK_STACKS[action[0][0]][action[0][1]]
         # Always drag onto the 6th card, which will cover all vertical positions
-        # TODO test
-        to_position = CLICK_STACKS[action[1][1]][5]
-        drag_from_to(mouse, from_position, to_position)
+        # Drag the card onto the top card of the stack. The to_action's 4th parameter is the current stack height
+        to_position = CLICK_STACKS[action[1][2]][action[1][3]]
+        # Shenzhen works by dragging
+        #drag_from_to(mouse, from_position, to_position)
+
+        # In MOLEK-SYNTEZ you have to click both start and end location
+        click_on(mouse, from_position)
+        click_on(mouse, to_position)
 
 
 def click_on(mouse, position):
     screen_position = game_to_screen(position)
     mouse.position = screen_position
     time.sleep(REPLAY_MOUSE_MOVE_TIME)
-    mouse.click(Button.left, 1)
+    mouse.press(Button.left)
+    time.sleep(0.05)
+    mouse.release(Button.left)
     time.sleep(REPLAY_MOUSE_MOVE_TIME)
 
 

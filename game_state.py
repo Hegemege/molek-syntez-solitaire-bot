@@ -29,6 +29,7 @@ class GameState:
         clone = GameState()
 
         for i in STACK_RANGE:
+            clone.cheats[i] = self.cheats[i]
             if self.stacks[i] is None:
                 clone.stacks[i] = None
                 continue
@@ -96,15 +97,26 @@ class GameState:
                 (stack_index, card_index)
             with card_index meaning the index of the card in the given stack
 
-            "to" is a 2-tuple
-                (cheat, index)
-            with cheat meaning whether the move is a "cheating" move, index being the target stack index
+            "to" is a 4-tuple
+                (cheat, collapse, stack_index, stack_size)
+            with cheat meaning whether the move is a "cheating" move,
+            collapse meaning a stack collapse action,
+            stack_index being the target stack index, and
+            stack_size being the current size of the target stack (for replaying the actions accurately)
         """
         actions = []
 
         # Loop through all stacks, and list out all legal actions
         for stack_index in STACK_RANGE:
             stack = self.stacks[stack_index]
+
+            if stack is None:
+                continue
+
+            # Check for being able to collapse the stack (a top slice of it)
+            can_collapse = True
+            collapse_check_value = 6
+
             for card_index in range(len(stack))[::-1]:
                 card = stack[card_index]
 
@@ -118,6 +130,20 @@ class GameState:
                     # Any card below a cheated card cannot be moved, break
                     if self.cheats[stack_index] == True:
                         break
+
+                # Check for collapsing
+                if collapse_check_value == card and can_collapse:
+                    collapse_check_value += 1
+                    if card == 14:  # Add a collapse action, if there is a free slow
+                        can_collapse = False
+                        empty_stack_index = self.get_empty_stack()
+                        if empty_stack_index >= 0:
+                            actions.append((
+                                (stack_index, card_index), (False,
+                                                            True, empty_stack_index, 0)
+                            ))
+                else:
+                    can_collapse = False
 
                 # Check if the card can be placed onto any other stack
                 for target_stack_index in STACK_RANGE:
@@ -134,8 +160,29 @@ class GameState:
                         continue
 
                     if self.can_place(card, target_stack_index):
+                        # Check if the action will perform a collapse
+                        # Check that the target stack supports it - must start from 14 at the bottom and end somewhere
+                        # before 6
+                        target_card_value = 14
+                        for i in self.stacks[target_stack_index]:
+                            if i == target_card_value:
+                                target_card_value -= 1
+                            else:
+                                target_card_value = -1
+
+                        # Target stack supports collapse - now check the source stack
+                        for i in range(len(self.stacks[stack_index])):
+                            if i < card_index:
+                                continue
+                            if self.stacks[stack_index][i] == target_card_value:
+                                target_card_value -= 1
+
+                        # The action will perform a collapse if the above checks result in a target_card_value of 5
+                        action_is_collapse = target_card_value == 5
+
                         actions.append((
-                            (stack_index, card_index), (False, target_stack_index)
+                            (stack_index, card_index), (False,
+                                                        action_is_collapse, target_stack_index, len(self.stacks[target_stack_index]))
                         ))
                     else:
                         # Check for cheat moves (only for other stacks that have cards and where we cannot normally move)
@@ -143,7 +190,9 @@ class GameState:
                         # Can not re-cheat a cheated card
                         if card_index == len(stack) - 1 and not self.cheats[stack_index]:
                             actions.append((
-                                (stack_index, card_index), (True, target_stack_index)
+                                (stack_index, card_index), (True,
+                                                            False, target_stack_index, len(
+                                                                self.stacks[target_stack_index]))
                             ))
 
         return actions
@@ -174,12 +223,18 @@ class GameState:
         from_card_index = action_from[1]
 
         to_cheat_state = action_to[0]
-        to_stack_index = action_to[1]
+        to_collapsing = action_to[1]
+        to_stack_index = action_to[2]
 
         cards_to_pull = len(
             self.stacks[from_stack_index]) - from_card_index
         cards = self.pull_from_stack(from_stack_index, cards_to_pull)
-        self.stacks[to_stack_index] += cards
+
+        if to_collapsing:
+            self.stacks[to_stack_index] = None
+        else:
+            self.stacks[to_stack_index] += cards
+
         # Set the cheat state of the topmost card. Has a real effect only if moving a cheat card
         self.cheats[to_stack_index] = to_cheat_state
         # If moving a cheated card to a valid position, un-cheat that stack
@@ -192,9 +247,34 @@ class GameState:
         """
         score = 0
 
-        # TODO: heuristic based on number of completed stacks
+        # Completed stacks is very good
+        # Empty slots is good
+        for stack in self.stacks:
+            if stack is None:
+                score += 50
+            elif len(stack) == 0:
+                score += 10
+
+        # High stacks is good (consecutive cards)
+        for stack in self.stacks:
+            if stack is not None and len(stack) > 5:
+                score += (len(stack) - 5) * 2
+
+        # Lots of cheated cards is bad
+
+        score -= sum(self.cheats) * 15
 
         return score
+
+    def get_empty_stack(self):
+        """
+            Returns the index of a stack that is empty, or -1 if none are.
+        """
+        for i in STACK_RANGE:
+            if self.stacks[i] is not None and len(self.stacks[i]) == 0:
+                return i
+
+        return -1
 
     def __eq__(self, other):
         for i in STACK_RANGE:
@@ -203,15 +283,21 @@ class GameState:
 
         return True
 
-    def __hash__(self):
-        stacks_hash = "-".join(["".join([str(y) for y in x])
-                                for x in self.stacks if len(x) > 0])
+    def hash_string(self):
+        stacks_hash = "-".join([",".join([str(y) for y in x])
+                                if (x is not None and len(x) > 0)
+                                else("C" if x is None else "E")
+                                for x in self.stacks])
         cheats_hash = "".join("C" if x else "L" for x in self.cheats)
-        return hash(stacks_hash + "-" + cheats_hash)
+        return stacks_hash + "-" + cheats_hash
+
+    def __hash__(self):
+        return hash(self.hash_string())
 
     def __str__(self):
         return ("Board:\n" +
                 "\n".join([", ".join(
-                    map(lambda slot: str(slot[0]) + " " + str(slot[1]), self.stacks[stack_index])) + (" C" if self.cheats[stack_index] else "")
+                    map(lambda slot: str(slot), self.stacks[stack_index])) + (" C" if self.cheats[stack_index] else "")
+                    if self.stacks[stack_index] is not None else "COLLAPSED"
                     for stack_index in STACK_RANGE]
                 ))
