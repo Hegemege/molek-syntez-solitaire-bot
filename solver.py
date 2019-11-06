@@ -29,15 +29,19 @@ CARD_VALUE_SIZE = (16, 18)
 COLOR_MATCH_THRESHOLD = 2
 
 CARD_LOOKUP = {}
-CARD_LOOKUP[6] = (100, 100, 100)
-CARD_LOOKUP[7] = (100, 100, 100)
-CARD_LOOKUP[8] = (100, 100, 100)
-CARD_LOOKUP[9] = (100, 100, 100)
-CARD_LOOKUP[10] = (100, 100, 100)
-CARD_LOOKUP[11] = (100, 100, 100)
-CARD_LOOKUP[12] = (100, 100, 100)
-CARD_LOOKUP[13] = (100, 100, 100)
-CARD_LOOKUP[14] = (100, 100, 100)
+# Average pixel colors of each card:
+# First 3 is the average color of the whole card value (CARD_VALUE_SIZE size)
+# Next 3 is the average color of the topleft 11x11 pixels
+# Together these uniquely identify each card
+CARD_LOOKUP[6] = (127, 127, 127, 111, 111, 111)
+CARD_LOOKUP[7] = (88, 88, 88, 92, 92, 92)
+CARD_LOOKUP[8] = (138, 138, 138, 136, 136, 136)
+CARD_LOOKUP[9] = (127, 127, 127, 128, 128, 128)
+CARD_LOOKUP[10] = (141, 141, 141, 185, 185, 185)
+CARD_LOOKUP[11] = (120, 120, 120, 77, 77, 77)  # V
+CARD_LOOKUP[12] = (141, 141, 141, 90, 90, 90)  # D
+CARD_LOOKUP[13] = (134, 134, 134, 128, 128, 128)  # K
+CARD_LOOKUP[14] = (106, 106, 106, 122, 122, 122)  # T
 
 # Autoplay parmeters
 CLICK_STACKS = [[(0, 0) for j in range(MAX_STACK_SIZE)]
@@ -80,8 +84,6 @@ def solve():
 
     # Parse the image and populate the state
     populate_state(image, state)
-
-    return
 
     # Setup lookups and other structures for the main solving loop
     state_history = {}
@@ -137,7 +139,6 @@ def solve():
             if heuristic_score >= highest_heuristic:
                 highest_heuristic = heuristic_score
                 shortest_solution = current_history + [action]
-                shortest_solution_suit_order = clone.suit_insert_order
 
             new_history = list(current_history)
             new_history += [action]
@@ -145,7 +146,8 @@ def solve():
             search_stack.append((clone, new_history, heuristic_score))
             states_searched += 1
 
-    replay_actions(shortest_solution)
+    print("Skipping replay...")
+    # replay_actions(shortest_solution)
 
 
 def replay_actions(actions):
@@ -238,10 +240,8 @@ def populate_state(image, state):
             bottom = top + CARD_VALUE_SIZE[1]
             card_value = image.crop((left, top, right, bottom))
 
-            card_value.save("slot_" + str(i) + "_" + str(j) + ".bmp")
-
             # Get avg from top left corner
-            top_left_avg = sample_avg_color(card_value, (2, 2))
+            top_left_avg = sample_avg_color(card_value, (5, 5))
 
             # Get overall color average
             pixels = list(card_value.getdata())
@@ -257,28 +257,21 @@ def populate_state(image, state):
     for position in sampled_colors:
         comb_color = sampled_colors[position]
 
-        found = False
-
         # Go through all color settings and try to find the correct one, that is as close to the given values as possible
-        for suit in CARD_LOOKUP:
-            if found:
+        for card_value in CARD_LOOKUP:
+            comparison_color = CARD_LOOKUP[card_value]
+
+            # Split the 6-tuples into 3-tuples
+            sampled_avg_color = comb_color[:3]
+            sampled_check_color = comb_color[3:]
+
+            comparison_avg_color = comparison_color[:3]
+            comparison_check_color = comparison_color[3:]
+
+            # Test if the colors are close to each other. Store the card position
+            if color_distance(sampled_avg_color, comparison_avg_color) < COLOR_MATCH_THRESHOLD and color_distance(sampled_check_color, comparison_check_color) < COLOR_MATCH_THRESHOLD:
+                position_lookup[position] = card_value
                 break
-            suit_cards = CARD_LOOKUP[suit]
-            for card_index in range(len(suit_cards)):
-                comparison_color = suit_cards[card_index]
-
-                # Split the 6-tuples into 3-tuples
-                sampled_avg_color = comb_color[:3]
-                sampled_check_color = comb_color[3:]
-
-                comparison_avg_color = comparison_color[:3]
-                comparison_check_color = comparison_color[3:]
-
-                # Test if the colors are close to each other. Store the card position
-                if color_distance(sampled_avg_color, comparison_avg_color) < COLOR_MATCH_THRESHOLD and color_distance(sampled_check_color, comparison_check_color) < COLOR_MATCH_THRESHOLD:
-                    position_lookup[position] = (suit, card_index)
-                    found = True
-                    break
 
     for position in sorted(position_lookup.keys()):
         stack_index = position[0]
@@ -288,12 +281,12 @@ def populate_state(image, state):
 def sample_avg_color(image, position):
     """
         Sample an average color from the image at the given position
-        Averages a 3x3 kernel around the pixel
+        Averages a 11x11 kernel around the pixel
     """
     kernel = []
-    topleft = (position[0] - 1, position[1] - 1)
-    for i in range(3):
-        for j in range(3):
+    topleft = (position[0] - 3, position[1] - 3)
+    for i in range(11):
+        for j in range(11):
             kernel.append(image.getpixel((topleft[0] + j, topleft[1] + i)))
     return avg_color_list(kernel)
 
