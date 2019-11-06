@@ -25,6 +25,9 @@ BOARD_VERTICAL_DELIMITER = 32
 CARD_VALUE_OFFSET = (10, 10)
 CARD_VALUE_SIZE = (16, 18)
 
+# 1440p fullscreen or 1440p native and 1080p windowed (must be in the center!)
+NEW_GAME_BUTTON = (1280, 1215)
+
 # Card identification parameters
 COLOR_MATCH_THRESHOLD = 2
 
@@ -53,18 +56,34 @@ REPLAY_WAIT_BETWEEN_ACTIONS = 0.06
 REPLAY_MOUSE_MOVE_TIME = 0.06
 
 
+# Run parameters
+RUN_COUNT = 100
+ALLOW_CHEATS = True
+
+
 def main():
     intro_print()
-    time.sleep(5)
+    time.sleep(1)
 
-    solve()
+    mouse = Controller()
+    # Click on the area once to make sure the first click doesn't get captured by window focus
+    click_on(mouse, CLICK_STACKS[0][0])
+    time.sleep(0.5)
+
+    # Loop the solving + new game
+    for i in range(RUN_COUNT):
+        # Click on new game once
+        click_on(mouse, NEW_GAME_BUTTON, False)
+        time.sleep(5)
+        solve()
+        time.sleep(1)
 
 
 def intro_print():
     """
         Prints introductory test of the program's features
     """
-    print("Launching in 5 seconds")
+    print("Launching...")
     print("Make sure the game is opened in fullscreen on the main window")
     print("To exit, close the script between games")
 
@@ -147,7 +166,7 @@ def solve():
             print()
             break
 
-        current_actions = current_state.get_legal_actions()
+        current_actions = current_state.get_legal_actions(ALLOW_CHEATS)
 
         for action in current_actions:
             clone = current_state.clone()
@@ -188,10 +207,6 @@ def replay_actions(actions):
     print("Replaying", len(actions), "actions")
     time.sleep(0.5)
 
-    # Click on the area once to make sure the first click doesn't get captured by window focus
-    #drag_from_to(mouse, CLICK_OPEN_SLOTS[0], CLICK_OPEN_SLOTS[1])
-    time.sleep(0.5)
-
     for action in actions:
         print(action)
 
@@ -208,8 +223,8 @@ def replay_actions(actions):
         click_on(mouse, to_position)
 
 
-def click_on(mouse, position):
-    screen_position = game_to_screen(position)
+def click_on(mouse, position, game_space=True):
+    screen_position = game_to_screen(position) if game_space else position
     mouse.position = screen_position
     time.sleep(REPLAY_MOUSE_MOVE_TIME)
     mouse.press(Button.left)

@@ -88,7 +88,7 @@ class GameState:
         """
         self.stacks[index].append(card)
 
-    def get_legal_actions(self):
+    def get_legal_actions(self, allow_cheats):
         """
             Returns all legal actions as a 2-tuple:
                 (from, to)
@@ -188,7 +188,7 @@ class GameState:
                         # Check for cheat moves (only for other stacks that have cards and where we cannot normally move)
                         # Can only cheat the topmost card
                         # Can not re-cheat a cheated card
-                        if card_index == len(stack) - 1 and not self.cheats[stack_index]:
+                        if allow_cheats and card_index == len(stack) - 1 and not self.cheats[stack_index]:
                             actions.append((
                                 (stack_index, card_index), (True,
                                                             False, target_stack_index, len(
