@@ -32,7 +32,7 @@ pip install Pillow pyscreenshot pynput
         - Windowed 1080p (centered)
     - You might need to tweak some of the screen coordinates if you are using other resolutions, see `solver.py`
 2. Open the Solitaire minigame (you must beat a couple of levels before you unlock it)
-3. Execute the script and alt-tab back into the game
+3. Run `solver.py` and alt-tab back into the game
 
 The script runs 100 games by default whether it finds a solution or not, so you might need to run it again to reach 100 wins needed for the achievement. Or just tweak the parameter `RUN_COUNT` in `solver.py`.
 
