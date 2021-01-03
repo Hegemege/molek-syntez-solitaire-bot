@@ -15,13 +15,13 @@ The bot simply executes the first solution it finds and does not try to find the
 Requires Python 3 and a couple of packages
 
 -   PIL (aka Pillow, Python Imaging Library)
--   pyscreenshot
+-   pyscreenshot (v1.0 or earlier, v2.0 seems to have broken something)
 -   pynput
 
-Recommended to install them via pip:
+Recommended to install them via pip (if you use Python for other development, please set up a new virtual env to avoid version conflicts, since pyscreenshot newest version has breaking changes):
 
 ```
-pip install Pillow pyscreenshot pynput
+pip install -r requirements.txt
 ```
 
 # Usage

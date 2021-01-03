@@ -1,0 +1,3 @@
+Pillow
+pyscreenshot==1.0
+pynput

@@ -47,8 +47,7 @@ CARD_LOOKUP[13] = (134, 134, 134, 128, 128, 128)  # K
 CARD_LOOKUP[14] = (106, 106, 106, 122, 122, 122)  # T
 
 # Autoplay parmeters
-CLICK_STACKS = [[(0, 0) for j in range(MAX_STACK_SIZE)]
-                for i in range(STACK_COUNT)]
+CLICK_STACKS = [[(0, 0) for j in range(MAX_STACK_SIZE)] for i in range(STACK_COUNT)]
 
 MAX_SOLUTION_LENGTH = 100
 
@@ -81,7 +80,7 @@ def main():
 
 def intro_print():
     """
-        Prints introductory test of the program's features
+    Prints introductory test of the program's features
     """
     print("Launching...")
     print("Make sure the game is opened in fullscreen on the main window")
@@ -90,7 +89,7 @@ def intro_print():
 
 def solve():
     """
-        Solves the current game configuration
+    Solves the current game configuration
     """
     image = ImageGrab.grab()
     image = crop(image)
@@ -138,9 +137,20 @@ def solve():
         current_history = current_search_item[1]
 
         # DEBUG
-        if current_search_item[2] > print_highest_heuristic or print_since > print_interval:
-            print("Top heuristic", highest_heuristic, "Heuristic", current_search_item[2], "Stack size", len(
-                search_stack), "Searched", states_searched)
+        if (
+            current_search_item[2] > print_highest_heuristic
+            or print_since > print_interval
+        ):
+            print(
+                "Top heuristic",
+                highest_heuristic,
+                "Heuristic",
+                current_search_item[2],
+                "Stack size",
+                len(search_stack),
+                "Searched",
+                states_searched,
+            )
 
         if print_state_since > print_state_interval:
             print("Current state", current_state)
@@ -200,7 +210,7 @@ def solve():
 
 def replay_actions(actions):
     """
-        Plays the solved actions on the board
+    Plays the solved actions on the board
     """
     mouse = Controller()
 
@@ -216,7 +226,7 @@ def replay_actions(actions):
         # Drag the card onto the top card of the stack. The to_action's 4th parameter is the current stack height
         to_position = CLICK_STACKS[action[1][2]][action[1][3]]
         # Shenzhen works by dragging
-        #drag_from_to(mouse, from_position, to_position)
+        # drag_from_to(mouse, from_position, to_position)
 
         # In MOLEK-SYNTEZ you have to click both start and end location
         click_on(mouse, from_position)
@@ -248,10 +258,10 @@ def drag_from_to(mouse, from_position, to_position):
 
 def crop(image):
     """
-        Crop the image to only contain the game view
-        Define the game view as a defined rectangle around the center of the screen
-        Assume the game is in native resolution
-        Confirmed to work in 1080p and 1440p
+    Crop the image to only contain the game view
+    Define the game view as a defined rectangle around the center of the screen
+    Assume the game is in native resolution
+    Confirmed to work in 1080p and 1440p
     """
     global GAME_LEFT
     global GAME_TOP
@@ -261,15 +271,15 @@ def crop(image):
     game_width = GAME_WIDTH
     game_height = GAME_HEIGHT
 
-    GAME_LEFT = (width - game_width)/2.0
-    GAME_TOP = (height - game_height)/2.0
+    GAME_LEFT = (width - game_width) / 2.0
+    GAME_TOP = (height - game_height) / 2.0
 
     return image.crop((GAME_LEFT, GAME_TOP, width - GAME_LEFT, height - GAME_TOP))
 
 
 def populate_state(image, state):
     """
-        Parse the image and populate the given game state
+    Parse the image and populate the given game state
     """
 
     sampled_colors = {}
@@ -277,10 +287,14 @@ def populate_state(image, state):
     # Loop through the board and extract color data from card values
     for i in range(STACK_COUNT):
         for j in range(MAX_STACK_SIZE):
-            left = BOARD_TOP_LEFT[0] + i * \
-                BOARD_HORIZONTAL_DELIMITER + CARD_VALUE_OFFSET[0]
-            top = BOARD_TOP_LEFT[1] + j * \
-                BOARD_VERTICAL_DELIMITER + CARD_VALUE_OFFSET[1]
+            left = (
+                BOARD_TOP_LEFT[0]
+                + i * BOARD_HORIZONTAL_DELIMITER
+                + CARD_VALUE_OFFSET[0]
+            )
+            top = (
+                BOARD_TOP_LEFT[1] + j * BOARD_VERTICAL_DELIMITER + CARD_VALUE_OFFSET[1]
+            )
 
             CLICK_STACKS[i][j] = (left, top)
 
@@ -320,7 +334,12 @@ def populate_state(image, state):
             comparison_check_color = comparison_color[3:]
 
             # Test if the colors are close to each other. Store the card position
-            if color_distance(sampled_avg_color, comparison_avg_color) < COLOR_MATCH_THRESHOLD and color_distance(sampled_check_color, comparison_check_color) < COLOR_MATCH_THRESHOLD:
+            if (
+                color_distance(sampled_avg_color, comparison_avg_color)
+                < COLOR_MATCH_THRESHOLD
+                and color_distance(sampled_check_color, comparison_check_color)
+                < COLOR_MATCH_THRESHOLD
+            ):
                 position_lookup[position] = card_value
                 break
 
@@ -331,8 +350,8 @@ def populate_state(image, state):
 
 def sample_avg_color(image, position):
     """
-        Sample an average color from the image at the given position
-        Averages a 11x11 kernel around the pixel
+    Sample an average color from the image at the given position
+    Averages a 11x11 kernel around the pixel
     """
     kernel = []
     topleft = (position[0] - 3, position[1] - 3)
@@ -344,24 +363,29 @@ def sample_avg_color(image, position):
 
 def avg_color_list(color_list):
     """
-        Returns the average color of the given list of 3-tuples
+    Returns the average color of the given list of 3-tuples
     """
-    colors = tuple(functools.reduce(lambda x, y: tuple(
-        map(lambda a, b: a + b, x, y)), color_list))
+    colors = tuple(
+        functools.reduce(lambda x, y: tuple(map(lambda a, b: a + b, x, y)), color_list)
+    )
     colors = tuple(map(lambda x: x // len(color_list), colors))
     return colors
 
 
 def color_distance(from_color, to_color):
     """
-        Calculate the euclidean distance of two colors in 3D space
+    Calculate the euclidean distance of two colors in 3D space
     """
-    return math.sqrt((from_color[0] - to_color[0]) ** 2 + (from_color[1] - to_color[1]) ** 2 + (from_color[2] - to_color[2]) ** 2)
+    return math.sqrt(
+        (from_color[0] - to_color[0]) ** 2
+        + (from_color[1] - to_color[1]) ** 2
+        + (from_color[2] - to_color[2]) ** 2
+    )
 
 
 def game_to_screen(position):
     """
-        Converts coordinates from game view into screen coordinates for mouse interaction
+    Converts coordinates from game view into screen coordinates for mouse interaction
     """
     return (GAME_LEFT + position[0], GAME_TOP + position[1])
 
