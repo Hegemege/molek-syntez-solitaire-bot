@@ -10,15 +10,17 @@ The solver uses a simple heuristic to solve, since the search space explodes due
 
 The bot simply executes the first solution it finds and does not try to find the shortest solution.
 
+
 # Requirements
 
 Requires Python 3 and a couple of packages
 
 -   PIL (aka Pillow, Python Imaging Library)
--   pyscreenshot (v1.0 or earlier, v2.0 seems to have broken something)
 -   pynput
 
-Recommended to install them via pip (if you use Python for other development, please set up a new virtual env to avoid version conflicts, since pyscreenshot newest version has breaking changes):
+Recommended to install them via pip (if you use Python for other development, please set up a new virtual env to avoid version conflicts, since pyscreenshot newest version has breaking changes).
+
+First, navigate to the directory where you cloned this repository to with the command `cd` (or on Windows, if you have installed Git, you can right click in to "Open Git Bash here") and run
 
 ```
 pip install -r requirements.txt
@@ -32,7 +34,7 @@ pip install -r requirements.txt
         - Windowed 1080p (centered)
     - You might need to tweak some of the screen coordinates if you are using other resolutions, see `solver.py`
 2. Open the Solitaire minigame (you must beat a couple of levels before you unlock it)
-3. Run `solver.py` and alt-tab back into the game
+3. Run `python solver.py` and alt-tab back into the game
 
 The script runs 100 games by default whether it finds a solution or not, so you might need to run it again to reach 100 wins needed for the achievement. Or just tweak the parameter `RUN_COUNT` in `solver.py`.
 
@@ -41,6 +43,7 @@ You can also toggle the cheats off, so the bot won't attempt to make any cheatin
 Best time to interrupt the script is during the new game shuffle, so just alt-tab back to your terminal and hit `Ctrl-C`.
 
 Have fun!
+
 
 # License
 
