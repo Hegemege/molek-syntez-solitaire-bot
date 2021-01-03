@@ -20,7 +20,7 @@ Requires Python 3 and a couple of packages
 
 Recommended to install them via pip (if you use Python for other development, please set up a new virtual env to avoid version conflicts, since some dependencies are forced to a specific version).
 
-First, navigate to the directory where you cloned this repository to with the command `cd` (or on Windows, if you have installed Git Bash, you can right click to "Open Git Bash here", or Shift+Right click to open the command line in the directory with `solver.py`) and run
+First, navigate to the directory where you cloned this repository to with the command `cd` (or on Windows, if you have installed Git Bash, you can right click to "Open Git Bash here", or Shift+Right click to open the command line in the project directory) and run
 
 ```
 pip install -r requirements.txt
