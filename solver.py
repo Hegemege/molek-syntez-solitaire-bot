@@ -1,5 +1,5 @@
 import PIL
-import pyscreenshot as ImageGrab
+from PIL import ImageGrab
 import time
 import functools
 import math
@@ -51,9 +51,9 @@ CLICK_STACKS = [[(0, 0) for j in range(MAX_STACK_SIZE)] for i in range(STACK_COU
 
 MAX_SOLUTION_LENGTH = 100
 
-REPLAY_WAIT_BETWEEN_ACTIONS = 0.06
-REPLAY_MOUSE_MOVE_TIME = 0.06
-
+REPLAY_WAIT_BETWEEN_ACTIONS = 0.05
+REPLAY_MOUSE_MOVE_TIME = 0.05
+REPLAY_MOUSE_BUTTON_HOLD_TIME = 0.05
 
 # Run parameters
 RUN_COUNT = 100
@@ -72,8 +72,14 @@ def main():
     # Loop the solving + new game
     for i in range(RUN_COUNT):
         # Click on new game once
+        print("\nNEW GAME\n", flush=True)
         click_on(mouse, NEW_GAME_BUTTON, False)
+        print(
+            "If you need to exit, now is the time. Ctrl+C or close the console window.",
+            flush=True,
+        )
         time.sleep(5)
+        print("Solving, please wait...", flush=True)
         solve()
         time.sleep(1)
 
@@ -84,7 +90,8 @@ def intro_print():
     """
     print("Launching...")
     print("Make sure the game is opened in fullscreen on the main window")
-    print("To exit, close the script between games")
+    print("To exit, close the script between games with Ctrl+C")
+    print(flush=True)
 
 
 def solve():
@@ -150,6 +157,7 @@ def solve():
                 len(search_stack),
                 "Searched",
                 states_searched,
+                flush=True,
             )
 
         if print_state_since > print_state_interval:
@@ -173,7 +181,7 @@ def solve():
             print("Length:", len(current_history))
             print("States searched:", states_searched)
             print("Stack size:", len(search_stack))
-            print()
+            print(flush=True)
             break
 
         current_actions = current_state.get_legal_actions(ALLOW_CHEATS)
@@ -218,7 +226,7 @@ def replay_actions(actions):
     time.sleep(0.5)
 
     for action in actions:
-        print(action)
+        # print(action, flush=True)
 
         # Stack to stack
         from_position = CLICK_STACKS[action[0][0]][action[0][1]]
@@ -238,7 +246,7 @@ def click_on(mouse, position, game_space=True):
     mouse.position = screen_position
     time.sleep(REPLAY_MOUSE_MOVE_TIME)
     mouse.press(Button.left)
-    time.sleep(0.05)
+    time.sleep(REPLAY_MOUSE_BUTTON_HOLD_TIME)
     mouse.release(Button.left)
     time.sleep(REPLAY_MOUSE_MOVE_TIME)
 

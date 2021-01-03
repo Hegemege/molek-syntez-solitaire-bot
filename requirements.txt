@@ -1,3 +1,2 @@
 Pillow
-pyscreenshot==1.0
-pynput
+pynput==1.6.8
