@@ -13,7 +13,7 @@ The bot simply executes the first solution it finds and does not try to find the
 
 # Requirements
 
-Requires (Python 3)[https://www.python.org/downloads/] and a couple of packages
+Requires [Python 3](https://www.python.org/downloads/) and a couple of packages
 
 -   PIL (aka Pillow, Python Imaging Library)
 -   pynput
